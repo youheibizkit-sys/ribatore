@@ -1,0 +1,983 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f5f5ee" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="リバトレ" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
+  <link rel="apple-touch-icon" href="./icon-192.png" />
+  <meta name="description" content="リバトレ｜負けるほど、強くなる。対局・トレーニング・敗因分析でリバーシが学べる無料ゲーム。" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="リバトレ｜負けるほど、強くなる。" />
+  <meta property="og:description" content="負けた理由を盤面で振り返る。遊びながら強くなる、トレーニング型リバーシ。" />
+  <title>リバトレ｜負けるほど、強くなる。</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif;
+      --bg: #f5f5ee; --paper: #fffefa; --ink: #172a24; --muted: #6e7d74;
+      --line: #e3e8dc; --green: #18805b; --darkgreen: #0d6749;
+      --board: #157b57; --boardline: #0b5b40;
+    }
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body { margin: 0; background: var(--bg); color: var(--ink); }
+    button { font: inherit; -webkit-tap-highlight-color: transparent; }
+    button:focus-visible { outline: 3px solid #f4a64d; outline-offset: 2px; }
+    .app { width: min(100%, 680px); margin: auto; padding: 23px 16px max(24px, env(safe-area-inset-bottom)); }
+    .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 2px; }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand-logo { position: relative; width: 34px; height: 34px; border-radius: 50%; background: #14271f; box-shadow: inset -4px -3px 0 #0b1813; }
+    .brand-logo:after { content:""; position: absolute; width: 17px; height: 30px; border-radius: 0 30px 30px 0; right: 1px; top: 2px; background: #fff; box-shadow: inset -3px -2px 0 #e2e7dc; }
+    h1 { font-size: 22px; font-weight: 850; letter-spacing: .025em; margin: 0; line-height: 1.2; }
+    .tagline { font-size: 11px; color: #397258; font-weight: 800; letter-spacing: .04em; margin-top: 3px; }
+    .top-tools { display:flex; gap: 7px; align-items:center; }
+    .icon-button { width: 38px; height: 38px; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; display:grid; place-items:center; cursor:pointer; color: var(--ink); }
+    .icon-button[aria-pressed="false"] .speaker-on, .icon-button[aria-pressed="true"] .speaker-off { display:none; }
+    .panel { background: var(--paper); border: 1px solid var(--line); border-radius: 22px; box-shadow: 0 6px 22px rgba(34, 69, 47, .035); }
+    .setup { margin-top: 20px; padding: 15px; display:flex; align-items:center; gap: 13px; justify-content:space-between; flex-wrap:wrap; }
+    .setting { display:flex; flex-direction: column; gap: 7px; }
+    .setting[hidden] { display:none; }
+    .setting-title { font-size: 11px; font-weight: 800; color:var(--muted); padding-left: 3px; }
+    .segmented { display:flex; gap:3px; padding: 3px; border-radius: 12px; background:#f0f2ea; }
+    .segmented button { min-width: 76px; padding:9px 12px; border:none; border-radius: 9px; color:#67776c; background:transparent; font-size: 12px; font-weight:800; cursor:pointer; white-space:nowrap; }
+    .segmented button.active { color:var(--ink); background:white; box-shadow: 0 2px 7px rgba(16, 40, 22, .10); }
+    .segmented button:disabled { opacity: .4; cursor: not-allowed; }
+    .game { margin-top: 13px; padding: 16px 16px 14px; }
+    .scores { display:grid; grid-template-columns: 1fr auto 1fr; align-items:center; gap: 10px; }
+    .player { display:flex; gap: 10px; align-items: center; padding:10px; border: 1.5px solid transparent; border-radius:14px; min-width:0; }
+    .player.white-side { justify-content: flex-end; text-align:right; }
+    .player.active { background:#eef8ef; border-color:#b9dfcc; }
+    .player .avatar { display:grid; place-items:center; width:37px; height:37px; border-radius:50%; flex: 0 0 auto; box-shadow: 0 2px 5px rgba(0,0,0,.12); }
+    .avatar.black { background:radial-gradient(circle at 34% 25%, #4b5651 0, #202924 50%, #0c1611 100%); border:2px solid #0b1812; }
+    .avatar.white { background:radial-gradient(circle at 34% 25%, #fff 0, #f9faf6 48%, #cfd8d0 100%); border:2px solid #c6d3c9; }
+    .player-info { min-width: 0; }
+    .player-label { color:var(--muted); font-size:11px; font-weight:750; white-space:nowrap; }
+    .player-score { font-size:24px; line-height:1.2; font-weight:850; font-variant-numeric:tabular-nums; }
+    .vs { color: #bdc6bb; font-size: 12px; font-weight: 900; letter-spacing:.02em; }
+    .status { margin: 9px 0 13px; background:#f0f5ed; border-radius: 12px; min-height:42px; padding:10px 12px; display:flex; gap: 8px; align-items:center; justify-content:center; text-align:center; font-size:13px; font-weight:800; }
+    .status-dot { width:9px; height:9px; flex:0 0 auto; border-radius:100%; background:#24352c; }
+    .status-dot.white { background:#fff; border:1px solid #a2afa5; }
+    .status-dot.done { background:#d6a34a; }
+    .board-wrap { position:relative; margin:0 auto; max-width:568px; }
+    .board { display:grid; grid-template-columns: repeat(8, 1fr); aspect-ratio:1; width:100%; overflow:hidden; border: 5px solid #10593f; border-radius:15px; background:var(--board); box-shadow: 0 5px 0 #0a5139, 0 10px 14px rgba(7,46,31,.13); touch-action: manipulation; }
+    .cell { position:relative; padding:0; min-width:0; border:0; border-right:1px solid var(--boardline); border-bottom:1px solid var(--boardline); background: linear-gradient(135deg, #1b875f, #137750); display:flex; align-items:center; justify-content:center; cursor:default; }
+    .cell:nth-child(8n) { border-right:0; }
+    .cell:nth-child(n+57) { border-bottom:0; }
+    .cell.legal { cursor:pointer; }
+    .cell.legal:hover { background: #29956d; }
+    .cell.legal:after { content:""; position:absolute; width:21%; height:21%; border-radius:50%; background:#bde2c4; opacity:.68; }
+    .cell.hint:before { content:""; position:absolute; inset:7%; border:3px solid #f1d97b; border-radius:50%; z-index:2; animation:pulse 1s ease-in-out infinite alternate; pointer-events:none; }
+    .cell.last { box-shadow: inset 0 0 0 2px #e7c77b; }
+    .cell.last .disc:after { content:""; position:absolute; top:9%; right:9%; width:10%; height:10%; background:#e9bf6a; border-radius:50%; }
+    .disc { position:relative; width:80%; height:80%; z-index:1; border-radius:50%; display:block; box-shadow: 0 2px 3px rgba(0,0,0,.33); }
+    .disc.black { background:radial-gradient(circle at 32% 22%, #5b6b62, #25342b 46%, #0b1b12 88%); border:1px solid #0b291d; }
+    .disc.white { background:radial-gradient(circle at 30% 18%, #fff, #f8faf6 47%, #d7e0d7 83%, #bdcbbf); border:1px solid #bed0c3; }
+    .disc.enter { animation:place .18s cubic-bezier(.2,1.2,.4,1) both; }
+    .disc.flip { animation:flip .35s ease both; }
+    @keyframes place { from { opacity:.6; transform:scale(.55); } to { opacity:1; transform:scale(1); } }
+    @keyframes flip { 0% { transform:rotateY(90deg) scale(.82); } 100% { transform:rotateY(0) scale(1); } }
+    @keyframes pulse { to { opacity:.45; transform: scale(.91); } }
+    .under-board { display:flex; justify-content:space-between; gap:10px; align-items:center; margin-top:18px; color:var(--muted); font-size:11px; font-weight:700; }
+    .under-board strong { color:var(--ink); }
+    .buttons { display:grid; grid-template-columns:1fr 1fr 1fr; gap: 9px; margin-top: 13px; }
+    .action { display:flex; justify-content:center; align-items:center; gap: 6px; padding:12px 8px; border:1px solid #dce5da; border-radius:12px; background:#f8fbf6; color:#2a4637; font-size:12px; font-weight:800; cursor:pointer; }
+    .action.primary { background:var(--green); color:white; border-color:var(--green); }
+    .action:disabled { opacity:.36; cursor:not-allowed; }
+    .rules { margin-top:13px; padding:0 18px; }
+    .rules summary { list-style:none; cursor:pointer; font-size:12px; color:#5e6f64; font-weight:800; padding:15px 0; display:flex; justify-content:space-between; align-items:center; }
+    .rules summary::-webkit-details-marker { display:none; }
+    .rules summary::after { content:'＋'; font-size:16px; }
+    .rules[open] summary::after { content:'－'; }
+    .rules p { color: #5f7065; font-size:12px; line-height:1.9; margin:0; padding-bottom:17px; }
+    .foot { text-align:center; font-size:10px; font-weight:650; letter-spacing:.07em; color:#9ba69d; margin-top:17px; }
+    .toast { position:fixed; bottom:26px; left:50%; transform:translate(-50%, 15px); opacity:0; pointer-events:none; z-index:50; border-radius:100px; background:rgba(20,44,31,.94); color:white; font-weight:800; font-size:12px; padding:11px 18px; transition:opacity .2s,transform .2s; max-width:90vw; white-space:nowrap; }
+    .toast.show { transform:translate(-50%,0); opacity:1; }
+    .dialog-backdrop { position:fixed; inset:0; z-index:30; display:none; place-items:center; padding:22px; background:rgba(10,30,19,.55); }
+    .dialog-backdrop.show { display:grid; }
+    .dialog { width:min(100%,350px); background:var(--paper); border-radius:22px; text-align:center; padding:27px 23px 23px; box-shadow:0 18px 65px rgba(0,0,0,.25); }
+    .dialog-mark { font-size:39px; margin-bottom:5px; }
+    .dialog h2 { margin:0; font-size:23px; }
+    .dialog p { color:var(--muted); font-size:13px; line-height:1.8; margin:9px 0 20px; }
+    .dialog .action { width:100%; font-size:14px; padding:14px; }
+    .dialog .secondary-link { font-size:12px; border:0; background:none; color:var(--muted); margin-top:14px; cursor:pointer; }
+    @media (max-width:420px) {
+      .app { padding:17px 10px 22px; }
+      .setup { padding:12px; gap:10px; }
+      .game { padding:12px 10px 13px; }
+      .setting { flex:1; }
+      .setting .segmented button { min-width:0; flex:1; font-size:11px; padding:9px 3px; }
+      .scores { gap:2px; }
+      .player { gap:7px; padding:7px 5px; }
+      .player .avatar { width:28px; height:28px; }
+      .player-score { font-size:22px; }
+      .player-label { font-size:10px; }
+      .board { border-width:4px; border-radius:11px; }
+      .status { font-size:12px; }
+      .buttons { gap:6px; }
+      .action { font-size:11px; gap:4px; padding:12px 5px; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *:before, *:after { animation-duration:0.01ms !important; transition-duration:0.01ms !important; } }
+
+    /* v2 - learning and post-match coaching */
+    .main-nav{margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:5px;border:1px solid var(--line);border-radius:16px;background:#e9eee5}
+    .main-nav button{border:0;border-radius:12px;background:transparent;color:#65736b;padding:12px 8px;font-weight:850;cursor:pointer;font-size:14px}
+    .main-nav button.active{background:var(--paper);color:var(--darkgreen);box-shadow:0 3px 10px #234b2c15}
+    [hidden]{display:none!important}
+    .learn-header{margin-top:13px;padding:20px}
+    .learn-header h2{margin:0;font-size:21px;letter-spacing:.01em}
+    .learn-header p{font-size:12px;color:var(--muted);margin:7px 0 0;line-height:1.75}
+    .learn-nav{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:13px}
+    .learn-nav button{border:1px solid var(--line);border-radius:12px;padding:12px 4px;background:var(--paper);color:#68776d;font-weight:850;font-size:12px;cursor:pointer}
+    .learn-nav button.active{background:#e4f2e6;color:#0d6749;border-color:#a8d3b5}
+    .learn-panel{margin-top:12px;padding:20px;min-height:300px}
+    .eyebrow{font-weight:850;font-size:11px;color:var(--green);letter-spacing:.075em}
+    .lesson-title{font-size:20px;margin:8px 0 9px}
+    .body-copy{font-size:13px;line-height:1.9;color:#53645a;margin:0 0 13px}
+    .callout{background:#edf5ed;border:1px solid #d2e8d8;border-radius:13px;padding:12px 14px;font-size:12px;line-height:1.85;color:#28543e;margin:13px 0}
+    .quiz-options{display:grid;gap:8px;margin:12px 0}
+    .quiz-options button{background:#f8faf5;border:1px solid #d9e5d9;border-radius:12px;padding:13px;text-align:left;font-size:13px;color:var(--ink);font-weight:750;cursor:pointer}
+    .quiz-options button.chosen{background:#dfefe4;border-color:#4e9b6b}
+    .quiz-options button.wrong{background:#fff1e9;border-color:#d7a07d}
+    .feedback{font-size:12px;line-height:1.85;border-radius:12px;background:#f1f6ee;padding:12px 14px;margin:12px 0;color:#385344}
+    .feedback.warn{background:#fff5e8;color:#735333}
+    .pager{display:flex;gap:9px;margin-top:15px}
+    .pager button{flex:1}
+    .progress-line{height:8px;border-radius:9px;background:#e6ece2;overflow:hidden;margin-top:8px}
+    .progress-fill{height:100%;width:0;background:var(--green);transition:width .2s}
+    .progress-label{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-weight:800;margin-top:9px}
+    .mini-board{display:grid;grid-template-columns:repeat(8,1fr);width:min(100%,390px);aspect-ratio:1;background:var(--board);border:4px solid #10593f;border-radius:13px;overflow:hidden;margin:14px auto;box-shadow:0 5px 0 #0a5139}
+    .mini-board .cell{min-height:0;cursor:default}
+    .mini-board .cell.legal{cursor:pointer}
+    .mini-board .cell.legal:after{width:19%;height:19%}
+    .mini-board .cell .disc{width:81%;height:81%}
+    .mini-board .cell.target-good{box-shadow:inset 0 0 0 3px #ffdf82}
+    .mini-board .cell.target-bad{box-shadow:inset 0 0 0 3px #f9a2a2}
+    .mini-board .cell.target-try{box-shadow:inset 0 0 0 3px #c9fcde}
+    .mini-board .cell:disabled{opacity:1}
+    .legend{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:3px 0 12px;font-size:11px;font-weight:750;color:var(--muted);justify-content:center}
+    .legend i{width:13px;height:13px;border:3px solid #ffdf82;display:inline-block;border-radius:4px;vertical-align:middle;margin-right:3px}
+    .legend i.bad{border-color:#f9a2a2}
+    .review-choice{display:grid;gap:7px;margin:10px 0}
+    .review-choice button{font-size:12px;text-align:left;line-height:1.6;background:#f6f8f3;border:1px solid var(--line);border-radius:12px;padding:11px 13px;color:var(--ink);cursor:pointer}
+    .review-choice button.active{background:#e6f2e8;border-color:#86c5a2}
+    .review-choice small{display:block;color:var(--muted);margin-top:2px}
+    .review-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}
+    .review-actions button{flex:1;min-width:120px}
+    .review-card{margin-top:13px;padding:15px}
+    .review-card h3{font-size:16px;margin:2px 0 9px}
+    .review-card details summary{display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:850;cursor:pointer;color:#23684c;list-style:none;padding:5px 0}
+    .review-card details summary::after{content:'⌄';font-size:19px;transition:transform .18s}
+    .review-card details[open] summary::after{transform:rotate(180deg)}
+    .review-card details summary::-webkit-details-marker{display:none}
+    .review-card p{font-size:12px;color:#5e6f64;line-height:1.8}
+    .advice-content{border-top:1px solid var(--line);padding-top:10px;margin-top:10px}
+    .dialog details{margin-top:12px;text-align:left;border-top:1px solid var(--line)}
+    .dialog details summary{font-size:13px;cursor:pointer;color:#216a4b;padding:12px 2px;font-weight:850;list-style:none}
+    .dialog details summary::after{content:' ⌄'}
+    .dialog details[open] summary::after{content:' ⌃'}
+    .dialog details summary::-webkit-details-marker{display:none}
+    .dialog details p{margin:0 0 8px;font-size:12px}
+    .dialog details button{margin-bottom:14px}
+    @media(max-width:420px){.learn-panel{padding:15px 13px}.learn-header{padding:16px}.mini-board{width:min(100%,350px)}.review-card{padding:14px}}
+
+    /* Review v3: explain a concrete move -> opponent reply -> follow-up. */
+    .review-insight{background:#f1f7f0;border:1px solid #d7e7d7;border-radius:15px;padding:14px 15px;margin:14px 0 12px}
+    .review-insight h3{font-size:15px;margin:0 0 9px;color:#194d38}
+    .review-insight p{margin:0 0 8px;color:#375847;font-size:12px;line-height:1.85}
+    .review-insight p:last-child{margin-bottom:0}
+    .review-insight .review-takeaway{border-top:1px solid #d7e7d7;padding-top:9px;color:#225c42;font-weight:760}
+    .review-compare{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:11px}
+    .review-compare div{padding:10px;border:1px solid #dbe6d9;background:#fffefa;border-radius:12px;min-width:0}
+    .review-compare strong{font-size:11px;display:block;color:var(--ink);margin-bottom:5px}
+    .review-compare span{display:block;font-size:11px;line-height:1.75;color:#577165;overflow-wrap:anywhere}
+    .review-branch-tabs{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:13px}
+    .review-branch-tabs button{border:1px solid #d8e4d8;border-radius:11px;background:#fafcf7;padding:11px 6px;font-size:12px;font-weight:850;color:#527264;cursor:pointer}
+    .review-branch-tabs button.active{background:#e0f0e4;border-color:#75b18e;color:#145f40}
+    .review-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin:10px 0}
+    .review-steps button{border:1px solid #dce4d9;border-radius:10px;background:#f8faf6;padding:9px 2px;color:#617668;font-size:10px;font-weight:800;cursor:pointer}
+    .review-steps button.active{background:#165f46;border-color:#165f46;color:#fff}
+    .review-step-caption{font-size:12px;line-height:1.85;padding:11px 13px;background:#f6f8f1;border-radius:12px;margin:11px 0;color:#315744;min-height:64px}
+    .review-disclaimer{font-size:11px;line-height:1.75;color:var(--muted);margin:10px 0 0}
+  </style>
+</head>
+<body>
+<main class="app">
+  <header class="top">
+    <div class="brand"><div class="brand-logo" aria-hidden="true"></div><div><h1>リバトレ</h1><div class="tagline">負けるほど、強くなる。</div></div></div>
+    <div class="top-tools"><button id="sound" class="icon-button" type="button" aria-label="効果音を切り替え" aria-pressed="true" title="効果音 ON/OFF">
+      <svg class="speaker-on" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>
+      <svg class="speaker-off" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="m16 9 5 6m0-6-5 6"/></svg>
+    </button></div>
+  </header>
+  <nav class="main-nav" aria-label="メインメニュー">
+    <button type="button" id="tab-play" class="active" aria-pressed="true">● 対局する</button>
+    <button type="button" id="tab-train" aria-pressed="false">✦ トレーニング</button>
+  </nav>
+  <div id="play-screen">
+  <section class="panel setup" aria-label="ゲーム設定">
+    <div class="setting"><div class="setting-title">プレイモード</div><div class="segmented" id="mode-tabs" role="group" aria-label="プレイモード"><button class="active" type="button" data-mode="cpu" aria-pressed="true">1人で遊ぶ</button><button type="button" data-mode="local" aria-pressed="false">2人で遊ぶ</button></div></div>
+    <div class="setting" id="difficulty-setting"><div class="setting-title">CPUの強さ</div><div class="segmented" id="difficulty-tabs" role="group" aria-label="CPUの強さ"><button type="button" data-level="easy" aria-pressed="false">やさしい</button><button class="active" type="button" data-level="normal" aria-pressed="true">ふつう</button><button type="button" data-level="hard" aria-pressed="false">つよい</button></div></div>
+  </section>
+  <section class="panel game" aria-label="ゲーム盤">
+    <div class="scores">
+      <div class="player active" id="black-player"><span class="avatar black" aria-hidden="true"></span><div class="player-info"><div id="black-name" class="player-label">あなた（黒）</div><div id="black-count" class="player-score" aria-label="黒の石の数">2</div></div></div>
+      <div class="vs">VS</div>
+      <div class="player white-side" id="white-player"><div class="player-info"><div id="white-name" class="player-label">CPU（白）</div><div id="white-count" class="player-score" aria-label="白の石の数">2</div></div><span class="avatar white" aria-hidden="true"></span></div>
+    </div>
+    <div class="status" id="status" role="status" aria-live="polite"><span class="status-dot"></span><span>あなたの番です。石を置いてください</span></div>
+    <div class="board-wrap"><div class="board" id="board" role="grid" aria-label="リバーシ盤 8行8列"></div></div>
+    <div class="under-board"><span>手数 <strong id="move-count">0</strong> / 最大60手</span><span id="assist">● が置ける場所です</span></div>
+    <div class="buttons"><button class="action" type="button" id="undo" disabled>↶ 1手戻す</button><button class="action" type="button" id="hint">✦ ヒント</button><button class="action primary" type="button" id="restart">↻ 新しい対局</button></div>
+  </section>
+  <section class="panel review-card" id="result-card" hidden aria-label="対局後の振り返り">
+    <div class="eyebrow">AFTER MATCH</div><h3 id="result-title">対局を振り返ろう</h3>
+    <details id="advice-fold"><summary>アドバイスを見る</summary>
+      <div class="advice-content"><p id="advice-summary">候補手を確認できます。</p>
+      <button class="action primary" id="open-review" type="button">実際の盤面で確認する</button></div>
+    </details>
+  </section>
+  <details class="panel rules"><summary>ルール・遊び方</summary><p>黒が先手です。相手の石を縦・横・斜めに挟める場所をタップすると、挟んだ石が自分の色に変わります。石を置ける場所には小さな丸が表示されます。置ける場所がないときは自動でパス。両者とも置けなくなったら、石が多い方の勝ちです。<br>1人プレイでは、あなたが黒、CPUが白です。「1手戻す」で直前の自分の手からやり直せます。</p></details>
+  </div>
+  <div id="train-screen" hidden>
+    <section class="panel learn-header"><div class="eyebrow">RIBATORE TRAINING</div><h2>打って、振り返って、強くなる。</h2><p>角を取るだけでなく、相手に角の手前を打たせる展開まで。短い練習を積み重ねよう。</p>
+      <div class="progress-label"><span>学習の進捗</span><span id="total-progress-text">0 / 16</span></div><div class="progress-line"><div class="progress-fill" id="total-progress"></div></div></section>
+    <nav class="learn-nav" aria-label="練習の種類"><button type="button" class="active" data-training="lesson">① レッスン</button><button type="button" data-training="puzzle">② 次の一手</button><button type="button" data-training="review">③ 対局の復習</button></nav>
+    <section class="panel learn-panel" id="lesson-panel">
+      <div class="eyebrow" id="lesson-progress-text">LESSON 1 / 8</div><h2 class="lesson-title" id="lesson-title"></h2>
+      <p class="body-copy" id="lesson-body"></p><div class="callout" id="lesson-tip"></div>
+      <div class="progress-label"><span>理解度チェック</span><span id="lesson-completed">0 / 8 習得</span></div>
+      <div id="lesson-question" class="body-copy" style="margin:13px 0 0;font-weight:800"></div><div id="lesson-options" class="quiz-options"></div>
+      <div id="lesson-feedback" class="feedback" hidden></div>
+      <div class="pager"><button type="button" class="action" id="lesson-prev">前のレッスン</button><button type="button" class="action primary" id="lesson-next">次のレッスン</button></div>
+    </section>
+    <section class="panel learn-panel" id="puzzle-panel" hidden>
+      <div class="eyebrow" id="puzzle-index">NEXT MOVE 1 / 8</div><h2 class="lesson-title" id="puzzle-title"></h2>
+      <p class="body-copy" id="puzzle-instruction"></p>
+      <div class="mini-board" id="puzzle-board" role="grid" aria-label="次の一手の練習盤"></div>
+      <div class="legend"><span>● 小さな丸：置ける場所</span><span id="puzzle-player"></span></div>
+      <div id="puzzle-feedback" class="feedback" hidden></div>
+      <button id="puzzle-sequence" type="button" class="action" style="width:100%;margin:12px 0" hidden>続きの手順を見る</button>
+      <div class="pager"><button class="action" type="button" id="puzzle-reset">もう一度</button><button class="action primary" type="button" id="puzzle-next">次の問題</button></div>
+      <div class="progress-label"><span>解けた問題</span><span id="puzzle-completed">0 / 8</span></div>
+    </section>
+    <section class="panel learn-panel" id="review-panel" hidden>
+      <div class="eyebrow">GAME REVIEW</div><h2 class="lesson-title">「もったいない一手」を復習</h2>
+      <p class="body-copy">実際の一手と別の候補を比較し、「相手にどう打たせるか」まで確認できます。赤は実際の手、黄色は打ち直し候補です。</p>
+      <div id="review-empty" class="callout">まずは1局、最後まで対戦してみよう。対局結果がここに保存されます。</div>
+      <div id="review-data" hidden>
+        <div id="review-choices" class="review-choice"></div>
+        <section class="review-insight" aria-label="この一手の詳しい理由">
+          <h3 id="review-headline">なぜこちらがよかった？</h3>
+          <p id="review-description"></p>
+          <p id="review-reason"></p>
+          <div class="review-compare" id="review-comparison"></div>
+          <p class="review-takeaway" id="review-takeaway"></p>
+        </section>
+        <div class="eyebrow" id="review-move-label"></div>
+        <div class="review-branch-tabs" role="group" aria-label="実際の手と候補手を比較">
+          <button type="button" id="review-branch-actual">実際の手を追う</button>
+          <button type="button" id="review-branch-best" class="active">候補手を追う</button>
+        </div>
+        <div class="mini-board" id="review-board" role="grid" aria-label="復習する局面"></div>
+        <div class="legend" id="review-legend"><span><i class="bad"></i>実際の手</span><span><i></i>打ち直し候補</span><span>緑：選んだ手順</span></div>
+        <div class="review-steps" role="group" aria-label="手順を切り替える">
+          <button type="button" data-review-step="0" class="active">① 打つ前</button>
+          <button type="button" data-review-step="1">② 自分</button>
+          <button type="button" data-review-step="2">③ 相手</button>
+          <button type="button" data-review-step="3">④ 次の手</button>
+        </div>
+        <p class="review-step-caption" id="review-step-description" aria-live="polite"></p>
+        <div class="review-actions"><button type="button" class="action" id="review-preview">次の手順を見る →</button><button type="button" class="action primary" id="review-retry">ここから打ち直す</button></div>
+        <p class="review-disclaimer">※候補手は簡易評価によるものです。相手の応手は、実際の棋譜または説明用の一例で、最善手の保証ではありません。「強制」は相手の合法手が本当に1か所の場合だけ表示します。</p>
+      </div>
+    </section>
+  </div>
+  <footer class="foot">RIBATORE · REVERSI TRAINING</footer>
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="dialog-backdrop" id="end-dialog" role="presentation"><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title"><div class="dialog-mark" id="dialog-mark">🏆</div><h2 id="dialog-title">対局終了</h2><p id="dialog-text"></p><details id="dialog-advice"><summary>アドバイスを見る</summary><p id="dialog-advice-text">今回の手を振り返ってみよう。</p><button class="action" id="dialog-review" type="button">盤面で詳しく見る</button></details><button class="action primary" id="dialog-restart" type="button">もう一局遊ぶ</button><button class="secondary-link" id="dialog-close" type="button">盤面を見る</button></div></div>
+<script>
+(() => {
+  'use strict';
+  const EMPTY = 0, BLACK = 1, WHITE = -1;
+  const DIRS = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+  const POS = [
+    120,-28,20, 5, 5,20,-28,120,
+    -28,-50,-5,-5,-5,-5,-50,-28,
+    20,-5,12,3,3,12,-5,20,
+    5,-5,3,3,3,3,-5,5,
+    5,-5,3,3,3,3,-5,5,
+    20,-5,12,3,3,12,-5,20,
+    -28,-50,-5,-5,-5,-5,-50,-28,
+    120,-28,20,5,5,20,-28,120
+  ];
+  const $ = id => document.getElementById(id);
+  const cells = [];
+  let board, turn, passes, ended, history, moves, lastMove;
+  let gameLog = [], lastReview = [], reviewCandidates = [], reviewIndex = 0, reviewStep = 0, reviewBranch = 'best';
+  let mainView = 'play', trainingView = 'lesson', lessonIndex = 0, puzzleIndex = 0, puzzleAnswered = null, puzzlePhase = 0;
+  let mode = 'cpu', difficulty = 'normal', thinking = false, thinkingTimer = null, hintIndex = -1, toastTimer = null, soundOn = true, gameVersion = 0;
+  let audio = null;
+  let completedLessons = new Set(), completedPuzzles = new Set();
+  try {
+    const progress = JSON.parse(localStorage.getItem('othello-training-v2') || '{}');
+    completedLessons = new Set(Array.isArray(progress.lessons)?progress.lessons:[]);
+    completedPuzzles = new Set(Array.isArray(progress.puzzles)?progress.puzzles:[]);
+    const saved = JSON.parse(localStorage.getItem('othello-last-review-v3') || localStorage.getItem('othello-last-review-v2') || '[]');
+    if(Array.isArray(saved)) lastReview = saved.filter(r=>typeof r.before==='string'&&r.before.length===64&&Number.isInteger(r.played)&&r.played>=0&&r.played<64&&[-1,1].includes(r.player));
+  } catch(_) {}
+  function saveLearning(){try{localStorage.setItem('othello-training-v2',JSON.stringify({lessons:[...completedLessons],puzzles:[...completedPuzzles]}))}catch(_){}}
+  const toStr=b=>Array.from(b,n=>n===BLACK?'B':n===WHITE?'W':'.').join('');
+  const fromStr=t=>Int8Array.from(t,c=>c==='B'?BLACK:c==='W'?WHITE:EMPTY);
+  const square=i=>String.fromCharCode(65+(i&7))+((i>>3)+1);
+
+
+  try {
+    const s = JSON.parse(localStorage.getItem('othello-settings-v1') || '{}');
+    if (s.mode === 'cpu' || s.mode === 'local') mode = s.mode;
+    if (['easy','normal','hard'].includes(s.difficulty)) difficulty = s.difficulty;
+    if (typeof s.soundOn === 'boolean') soundOn = s.soundOn;
+  } catch (_) {}
+  const store = () => { try { localStorage.setItem('othello-settings-v1', JSON.stringify({mode, difficulty, soundOn})); } catch(_) {} };
+
+  function initBoard() {
+    const elt = $('board');
+    for (let i=0;i<64;i++) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'cell'; b.setAttribute('role','gridcell');
+      b.addEventListener('click', () => placeByHuman(i));
+      elt.appendChild(b); cells.push(b);
+    }
+  }
+  function freshBoard() {
+    const b = new Int8Array(64);
+    b[27] = WHITE; b[28] = BLACK; b[35] = BLACK; b[36] = WHITE;
+    return b;
+  }
+  function flipsAt(b, idx, player) {
+    if (b[idx] !== EMPTY) return [];
+    const r = idx>>3, c = idx&7, out = [];
+    for (const [dr,dc] of DIRS) {
+      let rr=r+dr, cc=c+dc, group=[];
+      while (rr>=0 && rr<8 && cc>=0 && cc<8 && b[rr*8+cc] === -player) {
+        group.push(rr*8+cc); rr+=dr; cc+=dc;
+      }
+      if (group.length && rr>=0 && rr<8 && cc>=0 && cc<8 && b[rr*8+cc] === player) out.push(...group);
+    }
+    return out;
+  }
+  function legalMoves(b, player) {
+    const result=[];
+    for(let i=0;i<64;i++) if(b[i]===EMPTY) {
+      const flips=flipsAt(b,i,player);
+      if(flips.length) result.push({i,flips});
+    }
+    return result;
+  }
+  function perform(b, move, player) {
+    const next=b.slice(); next[move.i]=player;
+    for(const ix of move.flips) next[ix]=player;
+    return next;
+  }
+  function count(b) {
+    let black=0,white=0;
+    for (const n of b) { if(n===BLACK) black++; else if(n===WHITE) white++; }
+    return [black,white];
+  }
+  function snapshot() { return {board:board.slice(), turn, passes, ended, moves, lastMove, logLength:gameLog.length}; }
+  function restore(s) { board=s.board.slice(); turn=s.turn; passes=s.passes; ended=s.ended; moves=s.moves; lastMove=s.lastMove; gameLog.length=s.logLength; hintIndex=-1; }
+  function cancelThinking() { gameVersion++; if(thinkingTimer!==null) clearTimeout(thinkingTimer); thinkingTimer=null; thinking=false; }
+  function startGame() {
+    cancelThinking(); board=freshBoard(); turn=BLACK; passes=0; ended=false; history=[]; gameLog=[]; moves=0; lastMove=-1; hintIndex=-1;
+    $('result-card').hidden=true; $('advice-fold').open=false; $('dialog-advice').open=false;
+    $('end-dialog').classList.remove('show'); updateSettings(); render();
+  }
+  function updateSettings() {
+    document.querySelectorAll('[data-mode]').forEach(b => { const a=b.dataset.mode===mode; b.classList.toggle('active', a); b.setAttribute('aria-pressed', a); });
+    document.querySelectorAll('[data-level]').forEach(b => { const a=b.dataset.level===difficulty; b.classList.toggle('active', a); b.setAttribute('aria-pressed', a); });
+    $('difficulty-setting').hidden = mode==='local';
+    $('black-name').textContent= mode==='cpu' ? 'あなた（黒）' : '黒';
+    $('white-name').textContent= mode==='cpu' ? 'CPU（白）' : '白';
+    $('sound').setAttribute('aria-pressed', String(soundOn));
+  }
+  function render(changed=[], placed=-1) {
+    const available=(!ended && !(thinking && mode==='cpu')) ? legalMoves(board,turn) : [];
+    const availSet=new Set(available.map(m=>m.i));
+    const changedSet=new Set(changed);
+    for (let i=0;i<64;i++) {
+      const cell=cells[i]; const s=board[i], name=s===BLACK?'黒':s===WHITE?'白':'空き';
+      cell.className='cell';
+      if (i===lastMove) cell.classList.add('last');
+      if (availSet.has(i) && !(mode==='cpu' && turn===WHITE)) cell.classList.add('legal');
+      if(i===hintIndex) cell.classList.add('hint');
+      cell.disabled = ended || thinking || !availSet.has(i) || (mode==='cpu' && turn===WHITE);
+      cell.setAttribute('aria-label', `${(i>>3)+1}行${(i&7)+1}列、${name}${availSet.has(i)?'、ここに置けます':''}`);
+      const old=cell.firstElementChild;
+      const oldState = old ? (old.classList.contains('black') ? BLACK : WHITE) : EMPTY;
+      if(oldState!==s || (i===placed && s!==EMPTY)) {
+        cell.replaceChildren();
+        if (s!==EMPTY) {
+          const disc=document.createElement('span');
+          disc.className=`disc ${s===BLACK?'black':'white'} ${changedSet.has(i)?'flip':'enter'}`;
+          cell.appendChild(disc);
+        }
+      }
+    }
+    const [bk,wt]=count(board);
+    $('black-count').textContent=bk; $('white-count').textContent=wt;
+    $('move-count').textContent=moves;
+    $('black-player').classList.toggle('active',!ended && turn===BLACK);
+    $('white-player').classList.toggle('active',!ended && turn===WHITE);
+    $('undo').disabled = history.length===0;
+    $('hint').disabled = ended || thinking || (mode==='cpu' && turn===WHITE);
+    const dotClass=ended?'done':turn===WHITE?'white':'';
+    const msg = ended ? `対局終了！ ${bk} 対 ${wt}` : thinking ? 'CPUが考えています…' : mode==='cpu' ? 'あなたの番です。石を置いてください' : `${turn===BLACK?'黒':'白'}の番です。石を置いてください`;
+    $('status').innerHTML = `<span class="status-dot ${dotClass}"></span><span>${msg}</span>`;
+    $('assist').textContent=ended?'おつかれさまでした！':thinking?'次の一手を考え中':'● が置ける場所です';
+  }
+  function playSound(kind='put') {
+    if(!soundOn) return;
+    try {
+      const C=window.AudioContext||window.webkitAudioContext;
+      if(!C) return;
+      if(!audio) audio=new C();
+      if(audio.state==='suspended') audio.resume();
+      const osc=audio.createOscillator(), gain=audio.createGain(), now=audio.currentTime;
+      osc.type='sine'; osc.frequency.setValueAtTime(kind==='win'?540:kind==='pass'?290:380,now);
+      osc.frequency.exponentialRampToValueAtTime(kind==='win'?720:kind==='pass'?220:220,now+.09);
+      gain.gain.setValueAtTime(.055,now); gain.gain.exponentialRampToValueAtTime(.001,now+.12);
+      osc.connect(gain); gain.connect(audio.destination); osc.start(now); osc.stop(now+.13);
+    } catch(_) {}
+  }
+  function toast(message) {
+    const box=$('toast'); box.textContent=message; box.classList.add('show');
+    clearTimeout(toastTimer); toastTimer=setTimeout(()=>box.classList.remove('show'),1800);
+  }
+  function placeByHuman(idx) {
+    if(ended || thinking || (mode==='cpu' && turn===WHITE)) return;
+    const fs=flipsAt(board,idx,turn); if(!fs.length) return;
+    applyMove({i:idx,flips:fs});
+  }
+  function applyMove(move) {
+    if (ended) return;
+    history.push(snapshot());
+    gameLog.push({before:toStr(board),player:turn,played:move.i,moveNumber:moves+1});
+    const prev=turn;
+    board=perform(board,move,turn); moves++; lastMove=move.i; hintIndex=-1;
+    turn=-turn; passes=0;
+    playSound();
+    const passed=resolvePasses();
+    render(move.flips,move.i);
+    if(ended) { finish(); return; }
+    if(passed && !ended) toast(`${prev===BLACK?'白':'黒'}は置ける場所がないためパス`);
+    scheduleCPU();
+  }
+  function resolvePasses() {
+    let passed=false;
+    if(legalMoves(board,turn).length===0) {
+      passed=true; turn=-turn; passes=1;
+      if(legalMoves(board,turn).length===0) { ended=true; passes=2; }
+    }
+    return passed;
+  }
+  function finish() {
+    playSound('win');
+    const [bk,wt]=count(board);
+    let title, text, mark;
+    if(bk===wt) { title='引き分け！'; mark='🤝'; text=`黒 ${bk} ― 白 ${wt}。互角の勝負でした。`; }
+    else if(mode==='cpu') {
+      const win=bk>wt; title=win?'あなたの勝ち！':'CPUの勝ち！'; mark=win?'🏆':'👏';
+      text=`黒 ${bk} ― 白 ${wt}。${win?'お見事！ もう一局いきますか？':'負けるほど、強くなる。今回の一手を振り返ろう。'}`;
+    } else { title=`${bk>wt?'黒':'白'}の勝ち！`; mark='🏆'; text=`黒 ${bk} ― 白 ${wt}。いい勝負でした。`; }
+    $('dialog-title').textContent=title; $('dialog-text').textContent=text; $('dialog-mark').textContent=mark;
+    $('end-dialog').classList.add('show');
+    $('result-card').hidden=false;
+    $('result-title').textContent=title+' 振り返り';
+    $('dialog-advice').open=false;
+    lastReview=gameLog.flatMap((r,index)=>{
+      if(mode==='cpu'&&r.player!==BLACK)return [];
+      const next=gameLog[index+1];
+      return [{...r,actualReply:next?.player===-r.player?next.played:null}];
+    });
+    try{localStorage.setItem('othello-last-review-v3',JSON.stringify(lastReview))}catch(_){}
+    buildReview();
+  }
+  function undo() {
+    if(!history.length) return;
+    cancelThinking();
+    if(mode==='cpu') {
+      do { restore(history.pop()); } while(history.length>0 && turn!==BLACK);
+    } else restore(history.pop());
+    $('end-dialog').classList.remove('show'); $('result-card').hidden=true;render();
+    if(mode==='cpu' && turn===WHITE) scheduleCPU();
+  }
+
+  // Positional play: corners are valuable; squares next to empty corners are dangerous.
+  const CORNERS=[0,7,56,63];
+  const NEAR_CORNERS=[
+    {corner:0,near:[1,8,9]}, {corner:7,near:[6,14,15]},
+    {corner:56,near:[48,49,57]}, {corner:63,near:[54,55,62]}
+  ];
+  function evaluation(b) {
+    const [bk,wt]=count(b), empty=64-bk-wt;
+    if(empty===0 || (!legalMoves(b,BLACK).length && !legalMoves(b,WHITE).length)) return (wt-bk)*100000;
+    let position=0;
+    for(let i=0;i<64;i++) position+=POS[i]*(-b[i]);
+    for(const item of NEAR_CORNERS) if(b[item.corner]===EMPTY) {
+      for(const ix of item.near) if(b[ix]!==EMPTY) position+=(-b[ix])*-55;
+    }
+    const mobility=legalMoves(b,WHITE).length-legalMoves(b,BLACK).length;
+    const diff=wt-bk;
+    return position*1.6 + mobility*(empty>18?12:7) + diff*(empty>20?.8:empty>10?3:11);
+  }
+  function orderedMoves(b, player) {
+    const moves=legalMoves(b,player);
+    moves.sort((a,c) => (POS[c.i]+c.flips.length*.5)-(POS[a.i]+a.flips.length*.5));
+    return moves;
+  }
+  function minimax(b, player, depth, alpha, beta, passCount) {
+    if(depth<=0 || passCount>=2) return evaluation(b);
+    const candidates=orderedMoves(b,player);
+    if(!candidates.length) return minimax(b,-player,depth-1,alpha,beta,passCount+1);
+    if(player===WHITE) {
+      let best=-Infinity;
+      for(const move of candidates) { best=Math.max(best,minimax(perform(b,move,player),-player,depth-1,alpha,beta,0)); alpha=Math.max(alpha,best); if(alpha>=beta) break; }
+      return best;
+    }
+    let best=Infinity;
+    for(const move of candidates) { best=Math.min(best,minimax(perform(b,move,player),-player,depth-1,alpha,beta,0)); beta=Math.min(beta,best); if(beta<=alpha) break; }
+    return best;
+  }
+  function chooseCPU() {
+    const available=legalMoves(board,WHITE);
+    if(!available.length) return null;
+    if(difficulty==='easy') {
+      // Often chooses flips, but makes intentional mistakes.
+      if(Math.random()<.65) return available[Math.floor(Math.random()*available.length)];
+      return available.slice().sort((a,b)=>b.flips.length-a.flips.length)[0];
+    }
+    if(difficulty==='normal') {
+      const scored=available.map(move=>({move,score:evaluation(perform(board,move,WHITE))+move.flips.length*.8+Math.random()*13}));
+      scored.sort((a,b)=>b.score-a.score); return scored[0].move;
+    }
+    const empty=64-count(board).reduce((a,c)=>a+c,0);
+    const depth=empty<=9?7:empty<=16?5:4;
+    const ranked=orderedMoves(board,WHITE);
+    let best=null, top=-Infinity, alpha=-Infinity;
+    for(const move of ranked) {
+      const next=perform(board,move,WHITE);
+      const val=minimax(next,BLACK,depth-1,alpha,Infinity,0);
+      if(val>top) { top=val; best=move; }
+      alpha=Math.max(alpha,top);
+    }
+    return best || available[0];
+  }
+  function scheduleCPU() {
+    if(ended || mode!=='cpu' || turn!==WHITE) return;
+    thinking=true; render();
+    const version=++gameVersion;
+    thinkingTimer=setTimeout(() => {
+      thinkingTimer=null;
+      if(version!==gameVersion || ended || turn!==WHITE || mode!=='cpu') return;
+      const move=chooseCPU();
+      thinking=false;
+      if(move) applyMove(move);
+      else { const skipped=resolvePasses(); render(); if(ended) finish(); else if(skipped) toast('CPUはパスしました'); }
+    }, difficulty==='hard'?380:280);
+  }
+  function hint() {
+    if(ended || thinking || (mode==='cpu' && turn===WHITE)) return;
+    const candidates=legalMoves(board,turn);
+    if(!candidates.length) { toast('置ける場所がありません'); return; }
+    let best=-Infinity, choice=candidates[0];
+    for(const m of candidates) {
+      const b=perform(board,m,turn);
+      const score=(turn===WHITE?1:-1)*evaluation(b);
+      if(score>best) {best=score;choice=m;}
+    }
+    hintIndex=choice.i; render(); toast('黄色いリングの場所がおすすめ！');
+  }
+
+  // ---------- Training content and heuristic-based game review ----------
+  const lessons=[
+    {title:'角は、ひっくり返されない',body:'四隅の石は相手に挟まれないので、終局まで色が変わりません。角を確保すると、その辺を安定させる足がかりにもなります。',tip:'角が今すぐ合法手なら、優先して検討しよう。ただし終盤は最終石数も大切。',q:'角が強い大きな理由は？',opts:['一度に必ず8枚取れるから','置いた角の石はひっくり返らないから','角を取れば即勝利だから'],correct:1,why:'角の石は二度と相手の色になりません。'},
+    {title:'X打ちは「角を渡すか」を読む',body:'角の斜め隣、B2・G2・B7・G7はX打ちと呼ばれます。角が空いているとき、うっかり置くと相手が次に角を取れることがあります。',tip:'X打ちがすべて悪いわけではありません。自分が角を持っている場合や、相手が角を取れない場合などは好手になることも。',q:'角が空いているとき、Xに打つ前に最も確認したいことは？',opts:['相手が次に角を取れるか','たくさん石を返せるかだけ','自分の石が偶数になるか'],correct:0,why:'相手に角を取られる具体的な手順があるか、合法手を確認します。'},
+    {title:'C打ちにも気をつける',body:'角に辺で隣接するB1・A2などはC打ちと呼ばれます。ここも相手に角を与える危険があり、外周だから常に得とは限りません。',tip:'辺に置く前に、両端の角の状態と「次の相手の手」を確かめよう。',q:'C打ちとはどこ？',opts:['盤面の中央4マス','角の斜め隣','角のすぐ横の辺のマス'],correct:2,why:'B1やA2などの、角と辺で接しているマスがC打ちです。'},
+    {title:'相手の合法手を減らす',body:'強い人は、次の相手がどこに置けるかを意識します。相手の打てる場所が少なければ、危険な場所へ打たせるチャンスが生まれます。',tip:'「何枚返せる？」より「相手は次に何か所へ置ける？」を見てみよう。',q:'中盤に確認したい視点は？',opts:['常に石の数を最大にする','相手の次の合法手の数を比べる','必ず端から埋める'],correct:1,why:'選択肢の少ない相手は、好ましくない場所へ打つ可能性が高まります。'},
+    {title:'角の手前を「相手に打たせる」',body:'ここが一歩進んだ考え方。自分がXやCへ不用意に打つのではなく、相手の選択肢を絞って角の手前へ置かせ、次に自分が角を取れる形を作ります。',tip:'「相手は本当にそこへ打つしかない？」「その後、角は合法手？」まで一手ずつ検証しよう。',q:'相手を角の手前に誘導するには？',opts:['相手の打てる場所を制限する','自分が先にXを打つ','角の隣をすべて埋める'],correct:0,why:'相手の選択肢を減らし、角の手前を打たざるを得ない展開を狙います。'},
+    {title:'序盤は石を取りすぎない',body:'序盤に盤面を自分の色で埋めても、相手に多くの選択肢を与えてしまうことがあります。石の多さと形勢は同じではありません。',tip:'序盤は角への展開・相手の合法手・自分の打てる余地を優先して考えよう。',q:'序盤の手を選ぶとき、避けたい考えは？',opts:['次の相手の手を予測する','角を意識する','一度に返す枚数だけで決める'],correct:2,why:'大量に返しても、悪い形になる場合があります。'},
+    {title:'辺は「安全」だけではない',body:'辺は安定石を育てられることがある一方、相手に角への足場を作ってしまう場合もあります。端に置いたら安心、とは限りません。',tip:'特に角の近くは、そこに打った直後に何が起きるかを確認。',q:'辺に置く手について正しいのは？',opts:['必ず安全','角を取られる危険もある','相手は返せない'],correct:1,why:'辺の石でも、角の状況次第でひっくり返されます。'},
+    {title:'終盤は最後の石数を読む',body:'終盤は選択肢が少なくなるので、数手先まで実際に並べて読むことが大事。中盤と違い、最後に何枚残るかが直接勝敗を決めます。',tip:'置けないときのパスも含めて数えよう。',q:'終盤で特に重要になるのは？',opts:['今の着手で返す枚数だけ','最後までの手順と最終石数','最初の4手の形'],correct:1,why:'終局時の枚数が勝敗条件です。'}
+  ];
+  // All 8 puzzles are reachable, legal Reversi positions. Answers teach a specific strategic idea.
+  const puzzles=[
+    {name:'角を逃さない',board:'.WWWWB....WWBW..BBBBW....BBWBW....WBB.W..W.BBW.....B.B..........',player:BLACK,correct:0,theme:'A1の角が取れます。ほかにも置けますが、まずは確実な角を見つけよう。',explain:'A1は一度取ると返されません。目の前の石数だけでなく、角の価値を優先して考えます。'},
+    {name:'X打ちの落とし穴',board:'..WWW......WB....BWB.....WBBB......BB......WB...................',player:WHITE,correct:13,theme:'B2に打ちたくなる局面。相手にA1を渡さない手を探そう。',explain:'B2はX打ち。この局面でB2に打つと、次に黒がA1へ置けます。F2なら相手に直ちにA1を与えません。',bad:9},
+    {name:'C打ちを避ける',board:'..WWW......WB...BBWB.....BWWB.....BWW......BWW.....B............',player:WHITE,correct:5,theme:'A2のような角の横に打つ前に、相手の角取りを確認しよう。',explain:'A2はC打ち。ここに置くと相手がA1に打てます。F1ならその角取りを直ちには許しません。',bad:8},
+    {name:'別の角も探そう',board:'BBBBBB....WBBW..BBWWWW...WBWBB..W.WBB.B..W.BBB.B...B.BB.........',player:WHITE,correct:63,theme:'角はA1だけではありません。H8を取れる手を見つけよう。',explain:'H8の角も絶対に返されません。四隅を意識して盤面全体を見ます。'},
+    {name:'相手にXを打たせる',board:'.WWWWWWWB.WBWBB.BBWWBBBWBWBBBBBBBBWBBBB..BBBBBBW..BBWB....BBBB..',player:WHITE,correct:39,theme:'相手の選択肢を1つに絞り、次にA1を取る手順を見つけよう。',explain:'H5に打つと黒の合法手はB2だけになります。黒がB2に打った後、白はA1を取れます。',forced:{opp:9,corner:0}},
+    {name:'相手の選択肢を削る',board:'.WBB....BBBB.....BBB.B..BBBBBB..BBBBBB..WWWWWWB..WWWBBBBBWWWBB..',player:WHITE,correct:4,theme:'相手の次の合法手を少なくするには、どこがよい？',explain:'E1なら黒の次の合法手は2か所。一方F2なら7か所です。相手の自由度を減らす発想を練習します。',bad:13},
+    {name:'別のX打ちに注意',board:'.WWWW.....WWWW..BBBWW....BBWBB....WBB....W.BBW.....B.B..........',player:BLACK,correct:5,theme:'G7へのX打ちは危険かも。相手にH8を渡さない手を考えよう。',explain:'G7へ置くと白がH8を取れます。F1なら、次の白にH8を直ちに渡しません。',bad:54},
+    {name:'もう一度、角への誘導',board:'BBBBBB..BBBB.B.W.BBBBBWWBBBBWBBWBBBBBBBWBBWWWBBWBBBBBBBWBWWWBBBW',player:WHITE,correct:12,theme:'次の黒の手を1か所に制限し、右上の角を取ろう。',explain:'E2に置くと黒の合法手はG2だけ。黒がG2へ置けば、白はH1を取れます。',forced:{opp:14,corner:7}}
+  ];
+  function setView(where){
+    mainView=where;
+    $('play-screen').hidden=where!=='play'; $('train-screen').hidden=where!=='train';
+    $('tab-play').classList.toggle('active',where==='play');$('tab-train').classList.toggle('active',where==='train');
+    $('tab-play').setAttribute('aria-pressed',where==='play');$('tab-train').setAttribute('aria-pressed',where==='train');
+    if(where==='train')renderTraining();
+  }
+  function setTraining(where){
+    trainingView=where;
+    document.querySelectorAll('[data-training]').forEach(btn=>btn.classList.toggle('active',btn.dataset.training===where));
+    ['lesson','puzzle','review'].forEach(k=>$(k+'-panel').hidden=k!==where);
+    renderTraining();
+  }
+  function renderTraining(){
+    $('total-progress-text').textContent=`${completedLessons.size+completedPuzzles.size} / ${lessons.length+puzzles.length}`;
+    $('total-progress').style.width=`${100*(completedLessons.size+completedPuzzles.size)/(lessons.length+puzzles.length)}%`;
+    if(trainingView==='lesson')renderLesson();
+    if(trainingView==='puzzle')renderPuzzle();
+    if(trainingView==='review')renderReview();
+  }
+  let lessonAnswer=null;
+  function renderLesson(){
+    const l=lessons[lessonIndex];
+    $('lesson-progress-text').textContent=`LESSON ${lessonIndex+1} / ${lessons.length}`;
+    $('lesson-title').textContent=l.title;$('lesson-body').textContent=l.body;
+    $('lesson-tip').textContent='ポイント：'+l.tip;
+    $('lesson-question').textContent=l.q;
+    $('lesson-completed').textContent=`${completedLessons.size} / ${lessons.length} 習得`;
+    const wrap=$('lesson-options');wrap.replaceChildren();
+    l.opts.forEach((option,i)=>{
+      const b=document.createElement('button');b.type='button';b.textContent=option;
+      if(lessonAnswer===i)b.className=i===l.correct?'chosen':'wrong';
+      b.addEventListener('click',()=>{
+        lessonAnswer=i;
+        if(i===l.correct){completedLessons.add(lessonIndex);saveLearning();}
+        renderLesson();renderProgressOnly();
+      });wrap.appendChild(b);
+    });
+    $('lesson-feedback').hidden=lessonAnswer===null;
+    if(lessonAnswer!==null){$('lesson-feedback').className='feedback'+(lessonAnswer===l.correct?'':' warn');$('lesson-feedback').textContent=(lessonAnswer===l.correct?'正解！ ':'もう一度考えてみよう。 ')+l.why;}
+    $('lesson-prev').disabled=lessonIndex===0;
+    $('lesson-next').textContent=lessonIndex===lessons.length-1?'最初のレッスンへ':'次のレッスン';
+  }
+  function renderProgressOnly(){
+    $('total-progress-text').textContent=`${completedLessons.size+completedPuzzles.size} / ${lessons.length+puzzles.length}`;
+    $('total-progress').style.width=`${100*(completedLessons.size+completedPuzzles.size)/(lessons.length+puzzles.length)}%`;
+  }
+  function paintMini(id,b,player,opt={}){
+    const root=$(id); root.replaceChildren();
+    const legal=opt.interactive?new Set(legalMoves(b,player).map(x=>x.i)):new Set();
+    for(let i=0;i<64;i++){
+      const btn=document.createElement('button');btn.type='button';btn.className='cell';btn.disabled=!legal.has(i);
+      if(legal.has(i))btn.classList.add('legal');
+      if(i===opt.best)btn.classList.add('target-good');
+      if(i===opt.bad)btn.classList.add('target-bad');
+      if(i===opt.try)btn.classList.add('target-try');
+      const state=b[i];
+      if(state){const disc=document.createElement('span');disc.className='disc '+(state===BLACK?'black':'white');btn.appendChild(disc);}
+      btn.setAttribute('aria-label',`${square(i)} ${state===BLACK?'黒':state===WHITE?'白':'空き'}${legal.has(i)?'、置ける':''}`);
+      if(legal.has(i)&&opt.onClick)btn.addEventListener('click',()=>opt.onClick(i));
+      root.appendChild(btn);
+    }
+  }
+  function renderPuzzle(){
+    const p=puzzles[puzzleIndex];
+    $('puzzle-index').textContent=`NEXT MOVE ${puzzleIndex+1} / ${puzzles.length}`;
+    $('puzzle-title').textContent=p.name;
+    $('puzzle-instruction').textContent=p.theme;
+    $('puzzle-player').textContent=`あなたは${p.player===BLACK?'黒':'白'}`;
+    $('puzzle-completed').textContent=`${completedPuzzles.size} / ${puzzles.length}`;
+    $('puzzle-feedback').hidden=puzzleAnswered===null;
+    if(puzzleAnswered!==null){
+      $('puzzle-feedback').textContent=(puzzleAnswered===p.correct?'正解！ ':'この問題で狙っている手は '+square(p.correct)+'。 ')+p.explain;
+      $('puzzle-feedback').className='feedback'+(puzzleAnswered===p.correct?'':' warn');
+    }
+    const original=fromStr(p.board);
+    const showingSequence=!!p.forced && puzzleAnswered===p.correct;
+    const step=$('puzzle-sequence');step.hidden=!showingSequence;
+    if(showingSequence){
+      const instruction=['相手の応手を見る →','次に角が取れるか見る →','角を取って完成 →','最初の盤面に戻す ↻'];
+      step.textContent=instruction[puzzlePhase];
+    }
+    if(showingSequence&&puzzlePhase>0){
+      const m=legalMoves(original,p.player).find(m=>m.i===p.correct);
+      const after=perform(original,m,p.player);
+      if(puzzlePhase===1){
+        paintMini('puzzle-board',after,-p.player,{best:p.forced.opp});
+        $('puzzle-feedback').textContent=`まず${square(p.correct)}に打ちます。すると相手が打てるのは${square(p.forced.opp)}だけです。`;
+      }else{
+        const oppMove=legalMoves(after,-p.player).find(m=>m.i===p.forced.opp);
+        const afterOpp=perform(after,oppMove,-p.player);
+        if(puzzlePhase===2){
+          paintMini('puzzle-board',afterOpp,p.player,{best:p.forced.corner});
+          $('puzzle-feedback').textContent=`相手は${square(p.forced.opp)}へ置くしかありません。これで${square(p.forced.corner)}が合法手になりました。`;
+        }else{
+          const cornerMove=legalMoves(afterOpp,p.player).find(m=>m.i===p.forced.corner);
+          paintMini('puzzle-board',perform(afterOpp,cornerMove,p.player),p.player,{best:p.forced.corner});
+          $('puzzle-feedback').textContent=`成功！ ${square(p.forced.corner)}の角を取れました。相手の選択肢を制限することが鍵です。`;
+        }
+      }
+    }else{
+      paintMini('puzzle-board',original,p.player,{interactive:puzzleAnswered===null,onClick:(i)=>{
+        puzzleAnswered=i;puzzlePhase=0;
+        if(i===p.correct){completedPuzzles.add(puzzleIndex);saveLearning();}
+        renderPuzzle();renderProgressOnly();
+      },best:puzzleAnswered!==null?p.correct:-1,bad:puzzleAnswered!==null&&puzzleAnswered!==p.correct?puzzleAnswered:-1});
+    }
+  }
+  const CORNER_X={9:0,14:7,49:56,54:63},CORNER_C={1:0,8:0,6:7,15:7,48:56,57:56,55:63,62:63};
+  // Heuristic evaluation, not a proof of the best move. Opponent replies are examined.
+  function moveRating(b,player,move){
+    const after=perform(b,move,player);const next=legalMoves(after,-player);
+    const remaining=64-count(after).reduce((a,c)=>a+c,0);
+    let value=(player===WHITE?1:-1)*evaluation(after);
+    if(CORNERS.includes(move.i))value+=300;
+    const cornerThreat=next.filter(m=>CORNERS.includes(m.i)).length;
+    if(cornerThreat)value-=550*cornerThreat;
+    if((CORNER_X[move.i]!==undefined||CORNER_C[move.i]!==undefined)&&after[(CORNER_X[move.i]??CORNER_C[move.i])]===0)value-=10;
+    if(next.length===1){
+      const spot=next[0].i, corner=(CORNER_X[spot]??CORNER_C[spot]);
+      if(corner!==undefined && after[corner]===0){
+        const their=perform(after,next[0],-player);
+        if(legalMoves(their,player).some(m=>m.i===corner))value+=310;
+      }
+    }
+    if(remaining>12)value-=next.length*3;
+    return value;
+  }
+  // Build a concrete, legal continuation.  Only a single legal reply is "forced".
+  // For historical moves, prefer the actual opponent reply saved from the game log.
+  // For hypothetical alternatives, the opponent's move is an illustration, not a forecast.
+  function reviewLine(b,player,idx,actualReply=null){
+    const m=legalMoves(b,player).find(x=>x.i===idx);
+    if(!m)return null;
+    const after=perform(b,m,player);
+    const opp=legalMoves(after,-player);
+    const opponentCorners=opp.filter(x=>CORNERS.includes(x.i)).map(x=>x.i);
+    const trapMoves=opp.flatMap(reply=>{
+      const corner=(CORNER_X[reply.i]??CORNER_C[reply.i]);
+      if(corner===undefined||after[corner]!==EMPTY)return [];
+      const afterReply=perform(after,reply,-player);
+      return legalMoves(afterReply,player).some(x=>x.i===corner)?[{reply,corner}]:[];
+    });
+    const saved=opp.find(x=>x.i===actualReply);
+    const picked=saved||opp.find(x=>CORNERS.includes(x.i))||
+      (opp.length===1?opp[0]:null)||
+      (trapMoves.length?trapMoves[0].reply:null)||
+      opp.slice().sort((x,y)=>moveRating(after,-player,y)-moveRating(after,-player,x))[0]||null;
+    const afterOpp=picked?perform(after,picked,-player):after;
+    const following=legalMoves(afterOpp,player);
+    const ownCorners=following.filter(x=>CORNERS.includes(x.i));
+    const follow=ownCorners[0]||following.slice().sort((x,y)=>moveRating(afterOpp,player,y)-moveRating(afterOpp,player,x))[0]||null;
+    const afterFollow=follow?perform(afterOpp,follow,player):afterOpp;
+    const trap=trapMoves.length?trapMoves[0]:null;
+    return {idx,after,opp,opponentCorners,trapMoves,trap,picked,afterOpp,following,follow,afterFollow,
+      savedReply:!!saved,forced:opp.length===1,afterOppOwnCorners:ownCorners.map(x=>x.i)};
+  }
+  function explainReview(b,player,played,best){
+    const bad=reviewLine(b,player,played.i),good=reviewLine(b,player,best.i);
+    if(!bad||!good)return '実際の手と候補手で、相手の次の合法手を比較しましょう。';
+    if(bad.opponentCorners.length&&!good.opponentCorners.length)
+      return `${square(played.i)}の直後は相手に${bad.opponentCorners.map(square).join('・')}の角を取る合法手が生まれます。${square(best.i)}ならその角取りを直ちには許しません。`;
+    if(good.trap&&good.forced)
+      return `${square(best.i)}なら相手の合法手は${square(good.trap.reply.i)}だけ。角の手前に置かせ、次に${square(good.trap.corner)}の角を取れる形を作れます。`;
+    if(good.trap)
+      return `${square(best.i)}の後、相手が${square(good.trap.reply.i)}へ置けば${square(good.trap.corner)}の角を取れます。ただし相手の合法手は${good.opp.length}か所で、強制ではありません。`;
+    if(CORNERS.includes(best.i))return `${square(best.i)}の角を今取れます。角は最後までひっくり返らないので、見逃したくない一手です。`;
+    if(good.opp.length<bad.opp.length)
+      return `${square(played.i)}だと相手は${bad.opp.length}か所に打てますが、${square(best.i)}なら${good.opp.length}か所。相手の選択肢を絞る手です。`;
+    return `${square(played.i)}と${square(best.i)}では相手に渡す選択肢や角の安全性が異なります。相手の応手も盤面で比べましょう。`;
+  }
+  function makeReviewNarrative(r,b){
+    const bad=reviewLine(b,r.player,r.played,r.actualReply);
+    const good=reviewLine(b,r.player,r.best);
+    let headline='次に相手はどう打てる？';
+    let detail='',reason='',takeaway='';
+    if(bad.opponentCorners.length&&!good.opponentCorners.length){
+      headline='相手に角を渡さないための一手';
+      detail=`実際の${square(r.played)}を打つと、相手は次に${bad.opponentCorners.map(square).join('・')}の角へ置けるようになります。角は一度取られると取り返せません。`;
+      reason=`候補の${square(r.best)}では、相手はその角を次の一手で取れません。まずは相手の合法手に角が混ざらないかを比べてみましょう。`;
+      takeaway='覚えよう：自分の着手の直後、「相手は角に打てる？」を必ず確認。';
+    }else if(good.trap&&good.forced){
+      const spot=good.trap.reply.i,corner=good.trap.corner;
+      headline='相手に角の手前を打たせる一手';
+      detail=`候補の${square(r.best)}に打つと、相手の合法手は${square(spot)}の1か所だけになります。相手はそこへ置くしかありません。`;
+      reason=`相手が${square(spot)}に置くことで石の並びが変わり、こちらは次に${square(corner)}の角へ合法的に打てます。相手の選択肢を1つにすることが、この手の狙いです。`;
+      takeaway='覚えよう：角を取る前の勝負は「相手をどこに打たせるか」。';
+    }else if(CORNERS.includes(r.best)){
+      headline='角を今、確保できた';
+      detail=`候補の${square(r.best)}は角を直接取る合法手です。角の石は相手に挟まれないため、ゲーム終了までひっくり返りません。`;
+      reason=`実際の${square(r.played)}ではその確実な角の確保を見送りました。角は次の番まで残るとは限らないので、候補を優先して比較します。`;
+      takeaway='覚えよう：合法手に角があるときは、まずその手から検討。';
+    }else if(good.trap){
+      headline='相手が角の手前を選ぶと…';
+      detail=`候補の${square(r.best)}の後、相手が${square(good.trap.reply.i)}へ打てば、こちらは${square(good.trap.corner)}の角を取れるようになります。`;
+      reason=`ただし相手には${good.opp.length}か所の合法手があります。相手が別の場所を選べば展開は変わるので、角取りが確定したわけではありません。`;
+      takeaway='覚えよう：「角を取れる筋がある」と「相手に強制できる」は違う。';
+    }else if(good.opp.length<bad.opp.length){
+      headline='相手の自由を減らす一手';
+      detail=`実際の${square(r.played)}では相手は${bad.opp.length}か所に置けます。候補の${square(r.best)}なら${good.opp.length}か所になります。`;
+      reason=`相手の選択肢を減らすほど、良い場所を避けて打つことが難しくなる場合があります。ただし手数が少ないだけで必ず有利とは限らないため、次の相手の応手まで確認しましょう。`;
+      takeaway='覚えよう：石を何枚返すかより、相手の次の合法手を読む。';
+    }else{
+      headline='石の位置と次の応手を比べよう';
+      detail=`${square(r.best)}が簡易評価では有望な候補です。実際の${square(r.played)}と打った後の石の配置や、相手の合法手を比較してみましょう。`;
+      reason=`実際の手では相手に${bad.opp.length}か所、候補では${good.opp.length}か所の選択肢があります。角の周囲の石の並びも変わります。`;
+      takeaway='覚えよう：「この手の次に、相手はどこへ打てる？」を一緒に考える。';
+    }
+    const cornerStat=line=>line.opponentCorners.length?`相手が角 ${line.opponentCorners.map(square).join('・')} に打てる`:'次の手で相手の角取りなし';
+    const choiceStat=line=>line.opp.length===0?'相手はパス':`相手の合法手 ${line.opp.length}か所`;
+    return {bad,good,headline,detail,reason,takeaway,badStat:`${choiceStat(bad)}。${cornerStat(bad)}`,goodStat:`${choiceStat(good)}。${cornerStat(good)}`};
+  }
+  function buildReview(){
+    reviewCandidates=[];
+    for(const rec of lastReview){
+      const b=fromStr(rec.before), available=legalMoves(b,rec.player);
+      if(available.length<=1)continue;
+      const ranked=available.map(m=>({move:m,score:moveRating(b,rec.player,m)})).sort((x,y)=>y.score-x.score);
+      const chosen=ranked.find(x=>x.move.i===rec.played);
+      if(!chosen||ranked[0].move.i===rec.played)continue;
+      const delta=ranked[0].score-chosen.score;
+      if(delta<12)continue;
+      reviewCandidates.push({...rec,best:ranked[0].move.i,gap:delta,description:explainReview(b,rec.player,chosen.move,ranked[0].move)});
+    }
+    reviewCandidates.sort((a,b)=>b.gap-a.gap);
+    reviewCandidates=reviewCandidates.slice(0,3);
+    reviewIndex=0;reviewStep=0;reviewBranch='best';
+    const message=reviewCandidates.length?
+      `${reviewCandidates[0].moveNumber}手目の${square(reviewCandidates[0].played)}に、別の候補があります。${reviewCandidates[0].description}`:
+      '目立った取りこぼしは簡易解析では見つかりませんでした。';
+    $('advice-summary').textContent=message;$('dialog-advice-text').textContent=message;
+    $('open-review').disabled=!lastReview.length;
+  }
+  function ensureReview(){
+    if(lastReview.length&&!reviewCandidates.length)buildReview();
+  }
+  function renderReview(){
+    ensureReview();
+    $('review-empty').hidden=lastReview.length>0;
+    $('review-data').hidden=lastReview.length===0;
+    if(!lastReview.length)return;
+    const menu=$('review-choices');menu.replaceChildren();
+    if(!reviewCandidates.length){
+      const m=$('review-empty');m.hidden=false;m.textContent='大きな取りこぼしは簡易解析では見つかりませんでした。次の対局でも試してみましょう。';
+      $('review-data').hidden=true;return;
+    }
+    reviewCandidates.forEach((r,j)=>{
+      const btn=document.createElement('button');btn.type='button';
+      btn.className=j===reviewIndex?'active':'';
+      btn.textContent=`${r.moveNumber}手目：${square(r.played)} → 候補 ${square(r.best)}`;
+      btn.addEventListener('click',()=>{reviewIndex=j;reviewStep=0;reviewBranch='best';renderReview()});
+      menu.appendChild(btn);
+    });
+    const r=reviewCandidates[reviewIndex],b=fromStr(r.before);
+    const info=makeReviewNarrative(r,b),line=reviewBranch==='best'?info.good:info.bad;
+    const isActual=reviewBranch==='actual';
+    $('review-headline').textContent=info.headline;
+    $('review-description').textContent=info.detail;
+    $('review-reason').textContent=info.reason;
+    $('review-takeaway').textContent=info.takeaway;
+    $('review-comparison').replaceChildren();
+    for(const [label,stat] of [[`実際：${square(r.played)}`,info.badStat],[`候補：${square(r.best)}`,info.goodStat]]){
+      const div=document.createElement('div'),strong=document.createElement('strong'),span=document.createElement('span');
+      strong.textContent=label;span.textContent=stat;div.append(strong,span);$('review-comparison').appendChild(div);
+    }
+    $('review-branch-actual').classList.toggle('active',isActual);
+    $('review-branch-best').classList.toggle('active',!isActual);
+    $('review-branch-actual').setAttribute('aria-pressed',String(isActual));
+    $('review-branch-best').setAttribute('aria-pressed',String(!isActual));
+    document.querySelectorAll('[data-review-step]').forEach(btn=>{
+      btn.classList.toggle('active',Number(btn.dataset.reviewStep)===reviewStep);
+      btn.setAttribute('aria-pressed',String(Number(btn.dataset.reviewStep)===reviewStep));
+    });
+    const branchLabel=isActual?`実際 ${square(r.played)}`:`候補 ${square(r.best)}`;
+    let stage=b,mark={best:r.best,bad:r.played},caption='';
+    if(reviewStep===0){
+      caption=`${r.moveNumber}手目の着手前です。赤の${square(r.played)}が実際の一手、黄色の${square(r.best)}が打ち直し候補。まず相手が次に打てる場所を予想してみましょう。`;
+    }else if(reviewStep===1){
+      stage=line.after;mark={try:line.idx};
+      const threat=line.opponentCorners.length?`次に相手は${line.opponentCorners.map(square).join('・')}の角を取れます。`:'直後に相手が取れる角はありません。';
+      caption=`${branchLabel}に置きました。相手の合法手は${line.opp.length}か所です。${threat}`;
+    }else if(reviewStep===2){
+      stage=line.afterOpp;mark=line.picked?{try:line.picked.i}:{try:line.idx};
+      if(!line.picked)caption=`相手は置ける場所がないためパス。${branchLabel}のあとは、こちらが続けて打つ番になります。`;
+      else if(line.savedReply)caption=`この対局で、相手は実際に${square(line.picked.i)}へ打ちました。相手の合法手は${line.opp.length}か所ありました。`;
+      else if(line.forced)caption=`相手の合法手は${square(line.picked.i)}の1か所だけ。相手はここに打つしかありません（強制）。`;
+      else caption=`相手が${square(line.picked.i)}に打った場合の一例です。相手には他にも${line.opp.length-1}か所の選択肢があり、この応手が確定しているわけではありません。`;
+      if(line.afterOppOwnCorners.length)caption+=` この後、こちらは${line.afterOppOwnCorners.map(square).join('・')}の角を取れます。`;
+    }else{
+      stage=line.afterFollow;mark=line.follow?{try:line.follow.i}:{};
+      if(line.follow){
+        caption=`相手の応手の後、こちらが${square(line.follow.i)}に打つ展開です。${CORNERS.includes(line.follow.i)?'角を確保できました！':'これは続きの一例。実際には他の合法手も検討できます。'}`;
+      }else caption='この状態ではこちらに置ける場所がありません。パスになる展開です。';
+    }
+    $('review-move-label').textContent=`${r.moveNumber}手目・${r.player===BLACK?'黒':'白'}の視点｜${branchLabel}｜${reviewStep+1}/4`;
+    paintMini('review-board',stage,r.player,mark);
+    $('review-step-description').textContent=caption;
+    $('review-preview').textContent=reviewStep===3?'最初の局面へ ↻':'次の手順を見る →';
+  }
+  function retryReview(){
+    if(!reviewCandidates.length)return;
+    const r=reviewCandidates[reviewIndex];cancelThinking();
+    mode='cpu';store();
+    board=fromStr(r.before);turn=r.player;ended=false;passes=0;
+    moves=count(board).reduce((a,c)=>a+c,0)-4;
+    history=[];gameLog=[];lastMove=-1;hintIndex=-1;
+    $('result-card').hidden=true;$('end-dialog').classList.remove('show');
+    updateSettings();setView('play');render();
+    if(turn===WHITE){mode='local';store();updateSettings();render();toast('白の番から練習します（2人モード）');}
+    else toast('この局面から打ち直せます');
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  initBoard();
+  document.querySelectorAll('[data-mode]').forEach(btn=>btn.addEventListener('click',()=>{
+    if(mode===btn.dataset.mode) return;
+    mode=btn.dataset.mode; store(); startGame();
+  }));
+  document.querySelectorAll('[data-level]').forEach(btn=>btn.addEventListener('click',()=>{
+    if(difficulty===btn.dataset.level) return;
+    difficulty=btn.dataset.level; store(); startGame();
+  }));
+  $('sound').addEventListener('click',()=>{soundOn=!soundOn;store();updateSettings();if(soundOn)playSound();});
+  $('restart').addEventListener('click',startGame);
+  $('undo').addEventListener('click',undo);
+  $('hint').addEventListener('click',hint);
+  $('dialog-restart').addEventListener('click',startGame);
+  $('dialog-close').addEventListener('click',()=>$('end-dialog').classList.remove('show'));
+  $('tab-play').addEventListener('click',()=>setView('play'));
+  $('tab-train').addEventListener('click',()=>setView('train'));
+  document.querySelectorAll('[data-training]').forEach(b=>b.addEventListener('click',()=>setTraining(b.dataset.training)));
+  $('lesson-prev').addEventListener('click',()=>{if(lessonIndex>0){lessonIndex--;lessonAnswer=null;renderLesson()}});
+  $('lesson-next').addEventListener('click',()=>{lessonIndex=(lessonIndex+1)%lessons.length;lessonAnswer=null;renderLesson()});
+  $('puzzle-reset').addEventListener('click',()=>{puzzleAnswered=null;puzzlePhase=0;renderPuzzle()});
+  $('puzzle-next').addEventListener('click',()=>{puzzleIndex=(puzzleIndex+1)%puzzles.length;puzzleAnswered=null;puzzlePhase=0;renderPuzzle()});
+  $('puzzle-sequence').addEventListener('click',()=>{puzzlePhase=(puzzlePhase+1)%4;renderPuzzle()});
+  $('review-branch-actual').addEventListener('click',()=>{reviewBranch='actual';reviewStep=0;renderReview()});
+  $('review-branch-best').addEventListener('click',()=>{reviewBranch='best';reviewStep=0;renderReview()});
+  document.querySelectorAll('[data-review-step]').forEach(btn=>btn.addEventListener('click',()=>{reviewStep=Number(btn.dataset.reviewStep);renderReview()}));
+  $('review-preview').addEventListener('click',()=>{reviewStep=(reviewStep+1)%4;renderReview()});
+  $('review-retry').addEventListener('click',retryReview);
+  function openGameReview(){ $('end-dialog').classList.remove('show');setView('train');setTraining('review');$('train-screen').scrollIntoView({behavior:'smooth',block:'start'}); }
+  $('open-review').addEventListener('click',openGameReview);
+  $('dialog-review').addEventListener('click',openGameReview);
+  startGame();
+})();
+</script>
+<script>
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+    });
+  }
+</script>
+</body>
+</html>

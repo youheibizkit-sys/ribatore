@@ -1,0 +1,25 @@
+{
+  "name": "リバトレ｜負けるほど、強くなる。",
+  "short_name": "リバトレ",
+  "description": "対局・レッスン・次の一手・敗因分析で、遊ぶほど上達を目指せるリバーシ。",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f5ee",
+  "theme_color": "#f5f5ee",
+  "lang": "ja",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
