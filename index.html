@@ -31,8 +31,7 @@
     .app { width: min(100%, 680px); margin: auto; padding: 23px 16px max(24px, env(safe-area-inset-bottom)); }
     .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 2px; }
     .brand { display: flex; align-items: center; gap: 10px; }
-    .brand-logo { position: relative; width: 34px; height: 34px; border-radius: 50%; background: #14271f; box-shadow: inset -4px -3px 0 #0b1813; }
-    .brand-logo:after { content:""; position: absolute; width: 17px; height: 30px; border-radius: 0 30px 30px 0; right: 1px; top: 2px; background: #fff; box-shadow: inset -3px -2px 0 #e2e7dc; }
+    .brand-logo { display:block; width:40px; height:40px; flex:0 0 auto; border-radius:50%; object-fit:cover; box-shadow:0 1px 3px rgba(0,0,0,.13); }
     h1 { font-size: 22px; font-weight: 850; letter-spacing: .025em; margin: 0; line-height: 1.2; }
     .tagline { font-size: 11px; color: #397258; font-weight: 800; letter-spacing: .04em; margin-top: 3px; }
     .top-tools { display:flex; gap: 7px; align-items:center; }
@@ -249,7 +248,7 @@
 <body>
 <main class="app">
   <header class="top">
-    <div class="brand"><div class="brand-logo" aria-hidden="true"></div><div><h1>リバトレ</h1><div class="tagline">負けるほど、強くなる。</div></div></div>
+    <div class="brand"><img class="brand-logo" src="./header-logo.png" alt="" width="40" height="40" decoding="async" /><div><h1>リバトレ</h1><div class="tagline">負けるほど、強くなる。</div></div></div>
     <div class="top-tools"><button id="sound" class="icon-button" type="button" aria-label="効果音を切り替え" aria-pressed="true" title="効果音 ON/OFF">
       <svg class="speaker-on" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>
       <svg class="speaker-off" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="m16 9 5 6m0-6-5 6"/></svg>
