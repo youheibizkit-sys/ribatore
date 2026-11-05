@@ -1,5 +1,5 @@
 // Scoped offline assets for リバトレ. Leave unrelated caches on the same origin untouched.
-const CACHE_NAME = 'ribatore-v1-public-1';
+const CACHE_NAME = 'ribatore-v2-coaching-coordinates';
 const OWN_CACHE_PREFIXES = ['ribatore-', 'reversi-training-'];
 const ASSETS = ['./index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', (event) => {

@@ -203,6 +203,47 @@
     .review-steps button.active{background:#165f46;border-color:#165f46;color:#fff}
     .review-step-caption{font-size:12px;line-height:1.85;padding:11px 13px;background:#f6f8f1;border-radius:12px;margin:11px 0;color:#315744;min-height:64px}
     .review-disclaimer{font-size:11px;line-height:1.75;color:var(--muted);margin:10px 0 0}
+
+    /* v4: quiet play board, coordinate guides for training and review. */
+    .coordinate-frame{display:grid;grid-template-columns:0 minmax(0,1fr);grid-template-rows:0 minmax(0,auto);align-items:stretch;}
+    .coordinate-frame.coords-on{grid-template-columns:19px minmax(0,1fr);grid-template-rows:19px minmax(0,auto);}
+    .coordinate-top{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));padding:0 4px;align-items:center;text-align:center;min-width:0;}
+    .coordinate-left{display:grid;grid-template-rows:repeat(8,minmax(0,1fr));align-items:center;text-align:center;min-height:0;}
+    .coordinate-top span,.coordinate-left span{font-size:11px;font-weight:850;line-height:1;color:#496b57;font-variant-numeric:tabular-nums;}
+    .coordinate-frame:not(.coords-on) .coordinate-top,.coordinate-frame:not(.coords-on) .coordinate-left{visibility:hidden;}
+    .coordinate-frame .board,.coordinate-frame .mini-board{grid-column:2;grid-row:2;min-width:0;min-height:0;}
+    .coordinate-frame .coordinate-corner{grid-column:1;grid-row:1;}
+    .coordinate-frame .coordinate-top{grid-column:2;grid-row:1;}
+    .coordinate-frame .coordinate-left{grid-column:1;grid-row:2;}
+    .mini-coordinates{width:min(100%,410px);margin:14px auto;}
+    .mini-coordinates .mini-board{width:100%;margin:0;}
+    .under-board{flex-wrap:wrap;row-gap:6px;}
+    .coordinate-toggle{border:1px solid #c9d9cb;background:transparent;color:#4b715c;border-radius:999px;font-size:11px;font-weight:800;padding:5px 9px;cursor:pointer;white-space:nowrap;}
+    .coordinate-toggle[aria-pressed="true"]{background:#e2f2e7;border-color:#8bb99c;color:#145a3d;}
+    @media(max-width:420px){.coordinate-frame.coords-on{grid-template-columns:17px minmax(0,1fr);grid-template-rows:17px minmax(0,auto)}.coordinate-top span,.coordinate-left span{font-size:10px}.mini-coordinates{width:min(100%,370px)}.under-board{font-size:10px}}
+
+    /* v4: compact, prominent coaching CTA without bulky copy. */
+    .coach-card{border:1.5px solid #88b899;background:linear-gradient(125deg,#f1f9ed,#fffef6);box-shadow:0 5px 14px rgba(25,100,57,.10);padding:14px;}
+    .coach-card-head{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:9px;}
+    .coach-card-head strong{font-size:12px;color:#235c3e;}
+    .coach-card-head span{font-size:11px;color:#67806d;font-weight:750;}
+    .coach-card details summary{display:flex;justify-content:center;align-items:center;min-height:47px;background:#f7d887;border:1px solid #e2bd62;border-radius:12px;padding:11px;color:#2a3d28;font-size:15px;font-weight:900;text-align:center;box-shadow:0 3px 0 #dfb96b;}
+    .coach-card details summary:after{content:'⌄';position:absolute;right:13px;color:#4b5931;font-size:18px;}
+    .coach-card details{position:relative;}
+    .coach-card details[open] summary:after{transform:rotate(180deg)}
+    .coach-card .advice-content{margin-top:13px;padding-top:11px;}
+    .coach-card .advice-content p{margin:0 0 10px;}
+    .coach-card .advice-content button{width:100%;}
+    .dialog{padding:22px 20px 19px;}
+    .dialog-mark{font-size:34px;margin-bottom:4px;}
+    .dialog h2{font-size:21px;}
+    .dialog p{margin:7px 0 13px;}
+    .dialog-coach{border:1px solid #d4e5cf;border-radius:14px;background:#f2f8ef;padding:11px;margin:7px 0 11px;}
+    .dialog-coach strong{display:block;font-size:12px;color:#2b6547;margin-bottom:8px;}
+    .coach-button{display:block;width:100%;border:1px solid #deb75f;border-radius:11px;background:#f8d987;color:#263c2c;padding:13px 9px;font-size:14px;font-weight:900;cursor:pointer;box-shadow:0 3px 0 #dfb96b;}
+    .coach-button span{font-size:19px;margin-left:4px;vertical-align:-1px;}
+    .dialog #dialog-restart{background:transparent;border:1px solid #dce5da;color:#41614d;font-size:12px;padding:10px;}
+    .dialog .secondary-link{margin-top:7px;}
   </style>
 </head>
 <body>
@@ -230,15 +271,20 @@
       <div class="player white-side" id="white-player"><div class="player-info"><div id="white-name" class="player-label">CPU（白）</div><div id="white-count" class="player-score" aria-label="白の石の数">2</div></div><span class="avatar white" aria-hidden="true"></span></div>
     </div>
     <div class="status" id="status" role="status" aria-live="polite"><span class="status-dot"></span><span>あなたの番です。石を置いてください</span></div>
-    <div class="board-wrap"><div class="board" id="board" role="grid" aria-label="リバーシ盤 8行8列"></div></div>
-    <div class="under-board"><span>手数 <strong id="move-count">0</strong> / 最大60手</span><span id="assist">● が置ける場所です</span></div>
+    <div class="board-wrap coordinate-frame" id="game-coordinate-frame">
+      <div class="coordinate-corner" aria-hidden="true"></div>
+      <div class="coordinate-top" aria-hidden="true"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span></div>
+      <div class="coordinate-left" aria-hidden="true"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span></div>
+      <div class="board" id="board" role="grid" aria-label="リバーシ盤 8行8列"></div>
+    </div>
+    <div class="under-board"><span>手数 <strong id="move-count">0</strong> / 最大60手</span><span id="assist">● が置ける場所です</span><button type="button" id="coord-toggle" class="coordinate-toggle" aria-pressed="false" aria-label="通常対局の座標を表示する">座標 OFF</button></div>
     <div class="buttons"><button class="action" type="button" id="undo" disabled>↶ 1手戻す</button><button class="action" type="button" id="hint">✦ ヒント</button><button class="action primary" type="button" id="restart">↻ 新しい対局</button></div>
   </section>
-  <section class="panel review-card" id="result-card" hidden aria-label="対局後の振り返り">
-    <div class="eyebrow">AFTER MATCH</div><h3 id="result-title">対局を振り返ろう</h3>
-    <details id="advice-fold"><summary>アドバイスを見る</summary>
-      <div class="advice-content"><p id="advice-summary">候補手を確認できます。</p>
-      <button class="action primary" id="open-review" type="button">実際の盤面で確認する</button></div>
+  <section class="panel review-card coach-card" id="result-card" hidden aria-label="対局後の振り返り">
+    <div class="coach-card-head"><strong id="result-card-tagline">負けるほど、強くなる。</strong><span id="result-title">対局を振り返ろう</span></div>
+    <details id="advice-fold"><summary>✦ 強くなるヒントを見る</summary>
+      <div class="advice-content"><p id="advice-summary">今回の一手を振り返ろう。</p>
+      <button class="action primary" id="open-review" type="button">盤面で詳しく見る →</button></div>
     </details>
   </section>
   <details class="panel rules"><summary>ルール・遊び方</summary><p>黒が先手です。相手の石を縦・横・斜めに挟める場所をタップすると、挟んだ石が自分の色に変わります。石を置ける場所には小さな丸が表示されます。置ける場所がないときは自動でパス。両者とも置けなくなったら、石が多い方の勝ちです。<br>1人プレイでは、あなたが黒、CPUが白です。「1手戻す」で直前の自分の手からやり直せます。</p></details>
@@ -258,7 +304,12 @@
     <section class="panel learn-panel" id="puzzle-panel" hidden>
       <div class="eyebrow" id="puzzle-index">NEXT MOVE 1 / 8</div><h2 class="lesson-title" id="puzzle-title"></h2>
       <p class="body-copy" id="puzzle-instruction"></p>
-      <div class="mini-board" id="puzzle-board" role="grid" aria-label="次の一手の練習盤"></div>
+      <div class="mini-coordinates coordinate-frame coords-on">
+        <div class="coordinate-corner" aria-hidden="true"></div>
+        <div class="coordinate-top" aria-hidden="true"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span></div>
+        <div class="coordinate-left" aria-hidden="true"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span></div>
+        <div class="mini-board" id="puzzle-board" role="grid" aria-label="次の一手の練習盤"></div>
+      </div>
       <div class="legend"><span>● 小さな丸：置ける場所</span><span id="puzzle-player"></span></div>
       <div id="puzzle-feedback" class="feedback" hidden></div>
       <button id="puzzle-sequence" type="button" class="action" style="width:100%;margin:12px 0" hidden>続きの手順を見る</button>
@@ -283,7 +334,12 @@
           <button type="button" id="review-branch-actual">実際の手を追う</button>
           <button type="button" id="review-branch-best" class="active">候補手を追う</button>
         </div>
-        <div class="mini-board" id="review-board" role="grid" aria-label="復習する局面"></div>
+        <div class="mini-coordinates coordinate-frame coords-on">
+          <div class="coordinate-corner" aria-hidden="true"></div>
+          <div class="coordinate-top" aria-hidden="true"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span></div>
+          <div class="coordinate-left" aria-hidden="true"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span></div>
+          <div class="mini-board" id="review-board" role="grid" aria-label="復習する局面"></div>
+        </div>
         <div class="legend" id="review-legend"><span><i class="bad"></i>実際の手</span><span><i></i>打ち直し候補</span><span>緑：選んだ手順</span></div>
         <div class="review-steps" role="group" aria-label="手順を切り替える">
           <button type="button" data-review-step="0" class="active">① 打つ前</button>
@@ -300,7 +356,7 @@
   <footer class="foot">RIBATORE · REVERSI TRAINING</footer>
 </main>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-<div class="dialog-backdrop" id="end-dialog" role="presentation"><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title"><div class="dialog-mark" id="dialog-mark">🏆</div><h2 id="dialog-title">対局終了</h2><p id="dialog-text"></p><details id="dialog-advice"><summary>アドバイスを見る</summary><p id="dialog-advice-text">今回の手を振り返ってみよう。</p><button class="action" id="dialog-review" type="button">盤面で詳しく見る</button></details><button class="action primary" id="dialog-restart" type="button">もう一局遊ぶ</button><button class="secondary-link" id="dialog-close" type="button">盤面を見る</button></div></div>
+<div class="dialog-backdrop" id="end-dialog" role="presentation"><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title"><div class="dialog-mark" id="dialog-mark">🏆</div><h2 id="dialog-title">対局終了</h2><p id="dialog-text"></p><div class="dialog-coach" id="dialog-coach"><strong id="dialog-coach-tagline">負けるほど、強くなる。</strong><button class="coach-button" id="dialog-review" type="button">✦ 強くなるヒントを見る <span aria-hidden="true">›</span></button></div><button class="action" id="dialog-restart" type="button">もう一局遊ぶ</button><button class="secondary-link" id="dialog-close" type="button">盤面を見る</button></div></div>
 <script>
 (() => {
   'use strict';
@@ -321,7 +377,7 @@
   let board, turn, passes, ended, history, moves, lastMove;
   let gameLog = [], lastReview = [], reviewCandidates = [], reviewIndex = 0, reviewStep = 0, reviewBranch = 'best';
   let mainView = 'play', trainingView = 'lesson', lessonIndex = 0, puzzleIndex = 0, puzzleAnswered = null, puzzlePhase = 0;
-  let mode = 'cpu', difficulty = 'normal', thinking = false, thinkingTimer = null, hintIndex = -1, toastTimer = null, soundOn = true, gameVersion = 0;
+  let mode = 'cpu', difficulty = 'normal', showCoords = false, thinking = false, thinkingTimer = null, hintIndex = -1, toastTimer = null, soundOn = true, gameVersion = 0;
   let audio = null;
   let completedLessons = new Set(), completedPuzzles = new Set();
   try {
@@ -342,8 +398,9 @@
     if (s.mode === 'cpu' || s.mode === 'local') mode = s.mode;
     if (['easy','normal','hard'].includes(s.difficulty)) difficulty = s.difficulty;
     if (typeof s.soundOn === 'boolean') soundOn = s.soundOn;
+    if (typeof s.showCoords === 'boolean') showCoords = s.showCoords;
   } catch (_) {}
-  const store = () => { try { localStorage.setItem('othello-settings-v1', JSON.stringify({mode, difficulty, soundOn})); } catch(_) {} };
+  const store = () => { try { localStorage.setItem('othello-settings-v1', JSON.stringify({mode, difficulty, soundOn, showCoords})); } catch(_) {} };
 
   function initBoard() {
     const elt = $('board');
@@ -394,7 +451,7 @@
   function cancelThinking() { gameVersion++; if(thinkingTimer!==null) clearTimeout(thinkingTimer); thinkingTimer=null; thinking=false; }
   function startGame() {
     cancelThinking(); board=freshBoard(); turn=BLACK; passes=0; ended=false; history=[]; gameLog=[]; moves=0; lastMove=-1; hintIndex=-1;
-    $('result-card').hidden=true; $('advice-fold').open=false; $('dialog-advice').open=false;
+    $('result-card').hidden=true; $('advice-fold').open=false;
     $('end-dialog').classList.remove('show'); updateSettings(); render();
   }
   function updateSettings() {
@@ -404,6 +461,9 @@
     $('black-name').textContent= mode==='cpu' ? 'あなた（黒）' : '黒';
     $('white-name').textContent= mode==='cpu' ? 'CPU（白）' : '白';
     $('sound').setAttribute('aria-pressed', String(soundOn));
+    $('game-coordinate-frame').classList.toggle('coords-on',showCoords);
+    $('coord-toggle').setAttribute('aria-pressed',String(showCoords));
+    $('coord-toggle').textContent=showCoords?'座標 ON':'座標 OFF';
   }
   function render(changed=[], placed=-1) {
     const available=(!ended && !(thinking && mode==='cpu')) ? legalMoves(board,turn) : [];
@@ -416,7 +476,7 @@
       if (availSet.has(i) && !(mode==='cpu' && turn===WHITE)) cell.classList.add('legal');
       if(i===hintIndex) cell.classList.add('hint');
       cell.disabled = ended || thinking || !availSet.has(i) || (mode==='cpu' && turn===WHITE);
-      cell.setAttribute('aria-label', `${(i>>3)+1}行${(i&7)+1}列、${name}${availSet.has(i)?'、ここに置けます':''}`);
+      cell.setAttribute('aria-label', `${square(i)}、${name}${availSet.has(i)?'、ここに置けます':''}`);
       const old=cell.firstElementChild;
       const oldState = old ? (old.classList.contains('black') ? BLACK : WHITE) : EMPTY;
       if(oldState!==s || (i===placed && s!==EMPTY)) {
@@ -492,13 +552,16 @@
     if(bk===wt) { title='引き分け！'; mark='🤝'; text=`黒 ${bk} ― 白 ${wt}。互角の勝負でした。`; }
     else if(mode==='cpu') {
       const win=bk>wt; title=win?'あなたの勝ち！':'CPUの勝ち！'; mark=win?'🏆':'👏';
-      text=`黒 ${bk} ― 白 ${wt}。${win?'お見事！ もう一局いきますか？':'負けるほど、強くなる。今回の一手を振り返ろう。'}`;
+      text=`黒 ${bk} ― 白 ${wt}。${win?'お見事！':'次の一局に活かそう。'}`;
     } else { title=`${bk>wt?'黒':'白'}の勝ち！`; mark='🏆'; text=`黒 ${bk} ― 白 ${wt}。いい勝負でした。`; }
     $('dialog-title').textContent=title; $('dialog-text').textContent=text; $('dialog-mark').textContent=mark;
+    const lost = mode==='cpu' && bk<wt;
+    $('dialog-coach-tagline').textContent=lost?'負けるほど、強くなる。':'この一局から、強くなる。';
+    $('result-card-tagline').textContent=lost?'負けるほど、強くなる。':'この一局から、強くなる。';
     $('end-dialog').classList.add('show');
     $('result-card').hidden=false;
-    $('result-title').textContent=title+' 振り返り';
-    $('dialog-advice').open=false;
+    $('result-title').textContent='対局の振り返り';
+    $('advice-fold').open=false;
     lastReview=gameLog.flatMap((r,index)=>{
       if(mode==='cpu'&&r.player!==BLACK)return [];
       const next=gameLog[index+1];
@@ -852,10 +915,7 @@
     reviewCandidates.sort((a,b)=>b.gap-a.gap);
     reviewCandidates=reviewCandidates.slice(0,3);
     reviewIndex=0;reviewStep=0;reviewBranch='best';
-    const message=reviewCandidates.length?
-      `${reviewCandidates[0].moveNumber}手目の${square(reviewCandidates[0].played)}に、別の候補があります。${reviewCandidates[0].description}`:
-      '目立った取りこぼしは簡易解析では見つかりませんでした。';
-    $('advice-summary').textContent=message;$('dialog-advice-text').textContent=message;
+    $('advice-summary').textContent=reviewCandidates.length?`${reviewCandidates[0].moveNumber}手目の${square(reviewCandidates[0].played)}に、別の選択肢がありそうです。`:'今回もおつかれさま。復習して次の一局に活かそう。';
     $('open-review').disabled=!lastReview.length;
   }
   function ensureReview(){
@@ -948,6 +1008,7 @@
     difficulty=btn.dataset.level; store(); startGame();
   }));
   $('sound').addEventListener('click',()=>{soundOn=!soundOn;store();updateSettings();if(soundOn)playSound();});
+  $('coord-toggle').addEventListener('click',()=>{showCoords=!showCoords;store();updateSettings();});
   $('restart').addEventListener('click',startGame);
   $('undo').addEventListener('click',undo);
   $('hint').addEventListener('click',hint);
