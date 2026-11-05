@@ -1,7 +1,7 @@
 // Scoped offline assets for リバトレ. Leave unrelated caches on the same origin untouched.
-const CACHE_NAME = 'ribatore-v2-coaching-coordinates';
+const CACHE_NAME = 'ribatore-v3-situp-icon';
 const OWN_CACHE_PREFIXES = ['ribatore-', 'reversi-training-'];
-const ASSETS = ['./index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
+const ASSETS = ['./index.html', './manifest.webmanifest', './icon-situp-192.png', './icon-situp-512.png', './icon-situp-maskable-512.png'];
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)));
   self.skipWaiting();
